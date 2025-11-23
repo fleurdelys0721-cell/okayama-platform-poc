@@ -661,9 +661,6 @@ onMounted(() => {
     <footer class="bg-gray-900 text-white mt-16 py-8">
       <div class="max-w-7xl mx-auto px-4 text-center">
         <p class="text-sm">© 2025 岡山県デジタル合意形成プラットフォーム PoC</p>
-        <p class="text-xs text-gray-400 mt-2">
-          Nuxt 3 + Supabase Free + Vercel Free で完全無料運用
-        </p>
       </div>
     </footer>
   </div>
