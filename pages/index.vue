@@ -297,7 +297,7 @@ onMounted(() => {
               岡声（おかごえ）
             </h1>
             <p class="text-xs md:text-sm text-gray-600 mt-1">
-              岡山の本音が集まる掲示板
+              岡山の本音を集める情報プラットフォーム
             </p>
           </div>
           <button
