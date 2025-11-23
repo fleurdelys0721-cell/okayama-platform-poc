@@ -12,6 +12,19 @@ interface Opinion {
   ai_category?: string
   ai_tags?: string[]
   created_at: string
+  reaction_counts?: {
+    agree: number
+    disagree: number
+    important: number
+  }
+}
+
+interface Comment {
+  id: string
+  opinion_id: string
+  content: string
+  author_name?: string
+  created_at: string
 }
 
 const categories = [
@@ -33,6 +46,12 @@ const sortBy = ref('newest')
 const searchTerm = ref('')
 const summary = ref('')
 const loading = ref(false)
+
+// 合意形成機能用
+const selectedOpinion = ref<Opinion | null>(null)
+const showComments = ref(false)
+const comments = ref<Comment[]>([])
+const newComment = ref('')
 
 const formData = ref({
   title: '',
@@ -57,11 +76,14 @@ const filteredOpinions = computed(() => {
     )
   }
 
-  filtered.sort((a, b) => {
-    const dateA = new Date(a.created_at).getTime()
-    const dateB = new Date(b.created_at).getTime()
-    return sortBy.value === 'newest' ? dateB - dateA : dateA - dateB
-  })
+  // ソート
+  if (sortBy.value === 'newest') {
+    filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  } else if (sortBy.value === 'oldest') {
+    filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+  } else if (sortBy.value === 'consensus') {
+    filtered.sort((a, b) => calculateConsensus(b.reaction_counts) - calculateConsensus(a.reaction_counts))
+  }
 
   return filtered
 })
@@ -87,7 +109,6 @@ const loadOpinions = async () => {
     if (data) opinions.value = data
   } catch (error: any) {
     console.error('Error loading opinions:', error)
-    // alert('データの読み込みに失敗しました')
   } finally {
     loading.value = false
   }
@@ -118,7 +139,6 @@ const handleSubmit = async () => {
     if (error) throw error
 
     if (data) {
-      // AI分類を実行
       const result = await $fetch('/api/classify', {
         method: 'POST',
         body: { opinionId: data.id }
@@ -156,6 +176,85 @@ const generateSummary = async () => {
   }
 }
 
+// 合意形成機能
+const handleReaction = async (opinionId: string, reactionType: string) => {
+  try {
+    await $fetch(`/api/reactions/${opinionId}`, {
+      method: 'POST',
+      body: { reactionType }
+    })
+    
+    await loadOpinions()
+  } catch (error) {
+    console.error('Reaction error:', error)
+    alert('反応の送信に失敗しました')
+  }
+}
+
+const openComments = async (opinion: Opinion) => {
+  selectedOpinion.value = opinion
+  showComments.value = true
+  await loadComments(opinion.id)
+}
+
+const loadComments = async (opinionId: string) => {
+  try {
+    const data = await $fetch(`/api/comments/${opinionId}`)
+    comments.value = data || []
+  } catch (error) {
+    console.error('Error loading comments:', error)
+  }
+}
+
+const submitComment = async () => {
+  if (!newComment.value.trim() || !selectedOpinion.value) return
+  
+  try {
+    await $fetch(`/api/comments/${selectedOpinion.value.id}`, {
+      method: 'POST',
+      body: {
+        content: newComment.value,
+        authorName: formData.value.author_name
+      }
+    })
+    
+    newComment.value = ''
+    await loadComments(selectedOpinion.value.id)
+  } catch (error) {
+    console.error('Comment error:', error)
+    alert('コメントの投稿に失敗しました')
+  }
+}
+
+const closeComments = () => {
+  showComments.value = false
+  selectedOpinion.value = null
+  comments.value = []
+  newComment.value = ''
+}
+
+// Helper functions
+const calculateConsensus = (counts: any) => {
+  if (!counts) return 0
+  const total = (counts.agree || 0) + (counts.disagree || 0)
+  if (total === 0) return 0
+  return Math.round(((counts.agree || 0) / total) * 100)
+}
+
+const getAgreePercentage = (counts: any) => {
+  if (!counts) return 0
+  const total = (counts.agree || 0) + (counts.disagree || 0)
+  if (total === 0) return 0
+  return ((counts.agree || 0) / total) * 100
+}
+
+const getDisagreePercentage = (counts: any) => {
+  if (!counts) return 0
+  const total = (counts.agree || 0) + (counts.disagree || 0)
+  if (total === 0) return 0
+  return ((counts.disagree || 0) / total) * 100
+}
+
 // Lifecycle
 onMounted(() => {
   loadOpinions()
@@ -170,10 +269,10 @@ onMounted(() => {
         <div class="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 class="text-2xl md:text-3xl font-bold text-gray-900">
-              岡山市民の声プラットフォーム
+              岡山県民の声プラットフォーム
             </h1>
             <p class="text-xs md:text-sm text-gray-600 mt-1">
-              地域課題をみんなで考える デジタル合意形成システム（Vue.js版）
+              地域課題をみんなで考える デジタル合意形成システム
             </p>
           </div>
           <button
@@ -187,23 +286,6 @@ onMounted(() => {
     </header>
 
     <div class="max-w-7xl mx-auto px-4 py-8">
-      <!-- 無料版バナー -->
-      <div class="bg-gradient-to-r from-green-100 to-blue-100 border-2 border-green-400 rounded-xl p-4 mb-6">
-        <div class="flex items-center gap-3">
-          <span class="text-2xl">🗄️</span>
-          <div class="flex-1">
-            <h3 class="font-bold text-gray-900">🎉 完全無料で稼働中（Vue.js版）</h3>
-            <p class="text-sm text-gray-700">
-              Nuxt 3 + Supabase Free + Vercel Free
-            </p>
-          </div>
-          <div class="text-right">
-            <p class="text-xs text-gray-600">月額コスト</p>
-            <p class="text-2xl font-bold text-green-600">¥0</p>
-          </div>
-        </div>
-      </div>
-
       <!-- 統計ダッシュボード -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
@@ -376,6 +458,7 @@ onMounted(() => {
           >
             <option value="newest">新着順</option>
             <option value="oldest">古い順</option>
+            <option value="consensus">合意度順</option>
           </select>
         </div>
       </div>
@@ -403,6 +486,74 @@ onMounted(() => {
 
           <p class="text-gray-700 mb-4">{{ opinion.content }}</p>
 
+          <!-- 反応ボタン -->
+          <div class="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200 flex-wrap">
+            <button
+              @click="handleReaction(opinion.id, 'agree')"
+              class="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-50 hover:bg-green-100 transition text-sm"
+              :class="{ 'bg-green-200': (opinion.reaction_counts?.agree || 0) > 0 }"
+            >
+              👍 賛成
+              <span class="font-bold text-green-700">
+                {{ opinion.reaction_counts?.agree || 0 }}
+              </span>
+            </button>
+
+            <button
+              @click="handleReaction(opinion.id, 'disagree')"
+              class="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 hover:bg-red-100 transition text-sm"
+              :class="{ 'bg-red-200': (opinion.reaction_counts?.disagree || 0) > 0 }"
+            >
+              👎 反対
+              <span class="font-bold text-red-700">
+                {{ opinion.reaction_counts?.disagree || 0 }}
+              </span>
+            </button>
+
+            <button
+              @click="handleReaction(opinion.id, 'important')"
+              class="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-50 hover:bg-yellow-100 transition text-sm"
+              :class="{ 'bg-yellow-200': (opinion.reaction_counts?.important || 0) > 0 }"
+            >
+              💡 重要
+              <span class="font-bold text-yellow-700">
+                {{ opinion.reaction_counts?.important || 0 }}
+              </span>
+            </button>
+
+            <button
+              @click="openComments(opinion)"
+              class="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 transition text-sm"
+            >
+              💬 議論する
+            </button>
+          </div>
+
+          <!-- 合意度バー -->
+          <div class="mb-3" v-if="(opinion.reaction_counts?.agree || 0) + (opinion.reaction_counts?.disagree || 0) > 0">
+            <div class="flex items-center justify-between text-sm text-gray-600 mb-1">
+              <span>合意度</span>
+              <span class="font-bold">
+                {{ calculateConsensus(opinion.reaction_counts) }}%
+              </span>
+            </div>
+            <div class="w-full h-3 bg-gray-200 rounded-full overflow-hidden flex">
+              <div
+                class="bg-green-500 transition-all duration-300"
+                :style="{ width: `${getAgreePercentage(opinion.reaction_counts)}%` }"
+              ></div>
+              <div
+                class="bg-red-500 transition-all duration-300"
+                :style="{ width: `${getDisagreePercentage(opinion.reaction_counts)}%` }"
+              ></div>
+            </div>
+            <div class="flex items-center justify-between text-xs text-gray-500 mt-1">
+              <span>賛成 {{ opinion.reaction_counts?.agree || 0 }}</span>
+              <span>反対 {{ opinion.reaction_counts?.disagree || 0 }}</span>
+            </div>
+          </div>
+
+          <!-- メタ情報 -->
           <div class="flex items-center gap-4 text-sm text-gray-500 flex-wrap">
             <div class="flex items-center gap-1">
               📅 {{ new Date(opinion.created_at).toLocaleDateString('ja-JP') }}
@@ -427,7 +578,7 @@ onMounted(() => {
 
         <div v-if="filteredOpinions.length === 0" class="text-center py-12 text-gray-500">
           <p class="text-lg">{{ opinions.length === 0 ? 'まだ意見が投稿されていません' : '該当する意見が見つかりません' }}</p>
-          <button 
+          <button
             v-if="opinions.length === 0"
             @click="showForm = true"
             class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
@@ -438,10 +589,81 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- コメントモーダル -->
+    <div
+      v-if="showComments && selectedOpinion"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      @click.self="closeComments"
+    >
+      <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+        <!-- モーダルヘッダー -->
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <h3 class="text-xl font-bold text-gray-900 mb-2">{{ selectedOpinion.title }}</h3>
+              <p class="text-sm text-gray-600">{{ selectedOpinion.content }}</p>
+            </div>
+            <button
+              @click="closeComments"
+              class="text-gray-400 hover:text-gray-600 text-2xl ml-4"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        <!-- コメント一覧 -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-4">
+          <div v-if="comments.length === 0" class="text-center text-gray-500 py-8">
+            <p>まだコメントがありません</p>
+            <p class="text-sm mt-2">最初のコメントを投稿しましょう！</p>
+          </div>
+
+          <div
+            v-for="comment in comments"
+            :key="comment.id"
+            class="bg-gray-50 rounded-lg p-4"
+          >
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-medium text-gray-900">
+                {{ comment.author_name || '匿名' }}
+              </span>
+              <span class="text-xs text-gray-500">
+                {{ new Date(comment.created_at).toLocaleDateString('ja-JP') }}
+              </span>
+            </div>
+            <p class="text-gray-700">{{ comment.content }}</p>
+          </div>
+        </div>
+
+        <!-- コメント入力 -->
+        <div class="p-6 border-t border-gray-200">
+          <textarea
+            v-model="newComment"
+            rows="3"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            placeholder="コメントを入力..."
+          />
+          <div class="flex justify-end mt-3">
+            <button
+              @click="submitComment"
+              :disabled="!newComment.trim()"
+              class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              コメントを投稿
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- フッター -->
     <footer class="bg-gray-900 text-white mt-16 py-8">
       <div class="max-w-7xl mx-auto px-4 text-center">
-        <p class="text-sm">© 2025 岡山市デジタル合意形成プラットフォーム PoC</p>
+        <p class="text-sm">© 2025 岡山県デジタル合意形成プラットフォーム PoC</p>
+        <p class="text-xs text-gray-400 mt-2">
+          Nuxt 3 + Supabase Free + Vercel Free で完全無料運用
+        </p>
       </div>
     </footer>
   </div>
