@@ -170,10 +170,10 @@ onMounted(() => {
         <div class="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 class="text-2xl md:text-3xl font-bold text-gray-900">
-              岡山市民の声プラットフォーム
+              岡山県民の声プラットフォーム
             </h1>
             <p class="text-xs md:text-sm text-gray-600 mt-1">
-              地域課題をみんなで考える デジタル合意形成システム（Vue.js版）
+              地域課題をみんなで考える デジタル合意形成システム
             </p>
           </div>
           <button
@@ -187,23 +187,6 @@ onMounted(() => {
     </header>
 
     <div class="max-w-7xl mx-auto px-4 py-8">
-      <!-- 無料版バナー -->
-      <div class="bg-gradient-to-r from-green-100 to-blue-100 border-2 border-green-400 rounded-xl p-4 mb-6">
-        <div class="flex items-center gap-3">
-          <span class="text-2xl">🗄️</span>
-          <div class="flex-1">
-            <h3 class="font-bold text-gray-900">🎉 完全無料で稼働中（Vue.js版）</h3>
-            <p class="text-sm text-gray-700">
-              Nuxt 3 + Supabase Free + Vercel Free
-            </p>
-          </div>
-          <div class="text-right">
-            <p class="text-xs text-gray-600">月額コスト</p>
-            <p class="text-2xl font-bold text-green-600">¥0</p>
-          </div>
-        </div>
-      </div>
-
       <!-- 統計ダッシュボード -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
@@ -441,7 +424,7 @@ onMounted(() => {
     <!-- フッター -->
     <footer class="bg-gray-900 text-white mt-16 py-8">
       <div class="max-w-7xl mx-auto px-4 text-center">
-        <p class="text-sm">© 2025 岡山市デジタル合意形成プラットフォーム PoC</p>
+        <p class="text-sm">© 2025 岡山県デジタル合意形成プラットフォーム PoC</p>
       </div>
     </footer>
   </div>
