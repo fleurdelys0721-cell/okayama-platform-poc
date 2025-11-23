@@ -177,16 +177,41 @@ const generateSummary = async () => {
 }
 
 // 合意形成機能
-const handleReaction = async (opinionId: string, reactionType: string) => {
+const handleReaction = async (opinionId: string, reactionType: 'agree' | 'disagree' | 'important') => {
+  // 1. まずローカルのデータを検索
+  const opinion = opinions.value.find(op => op.id === opinionId)
+  if (!opinion) return
+
+  // 2. reaction_countsオブジェクトがない場合は初期化
+  if (!opinion.reaction_counts) {
+    opinion.reaction_counts = { agree: 0, disagree: 0, important: 0 }
+  }
+
+  // 3. 【重要】API通信を待たずに、画面上で即座に数字を増やす（オプティミスティック更新）
+  // これによりユーザーは「ボタンが反応した」とすぐに分かります
+  if (reactionType === 'agree') opinion.reaction_counts.agree++
+  if (reactionType === 'disagree') opinion.reaction_counts.disagree++
+  if (reactionType === 'important') opinion.reaction_counts.important++
+
   try {
+    // 4. バックグラウンドでAPIに送信
     await $fetch(`/api/reactions/${opinionId}`, {
       method: 'POST',
       body: { reactionType }
     })
     
-    await loadOpinions()
+    // 補足: ここで await loadOpinions() を呼ぶと、
+    // DB側の集計が遅れている場合に数字が元に戻る現象が起きうるため、
+    // 必須ではありません（整合性を厳密にするなら呼びます）
+    
   } catch (error) {
     console.error('Reaction error:', error)
+    
+    // 5. エラーが起きたら、増やした数字を元に戻す（ロールバック）
+    if (reactionType === 'agree') opinion.reaction_counts.agree--
+    if (reactionType === 'disagree') opinion.reaction_counts.disagree--
+    if (reactionType === 'important') opinion.reaction_counts.important--
+    
     alert('反応の送信に失敗しました')
   }
 }

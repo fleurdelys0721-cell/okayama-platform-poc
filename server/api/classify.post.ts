@@ -1,13 +1,13 @@
 import { serverSupabaseClient } from '#supabase/server'
 
 const categories = [
-  { name: '交通・インフラ', keywords: ['駐輪', '道路', '電車', 'バス', '駅', '渋滞', '信号'] },
-  { name: '教育・子育て', keywords: ['保育園', '学校', '子ども', '教育', '待機児童', '給食'] },
-  { name: '医療・福祉', keywords: ['病院', '医療', '高齢者', '介護', '福祉', '健康'] },
-  { name: '経済・雇用', keywords: ['仕事', '雇用', '企業', '商店街', '産業', '就職'] },
-  { name: '環境・エネルギー', keywords: ['ごみ', '環境', '自然', '公園', 'リサイクル', '再エネ'] },
-  { name: '文化・観光', keywords: ['観光', '後楽園', '文化', 'イベント', '祭り', '歴史'] },
-  { name: '防災・安全', keywords: ['防災', '災害', '地震', '避難', '消防', '治安'] },
+  { name: '交通・インフラ', keywords: ['駐輪', '道路', '電車', 'バス', '駅', '渋滞', '信号', '交通'] },
+  { name: '教育・子育て', keywords: ['保育園', '学校', '子ども', '子供', '教育', '待機児童', '給食', '育児'] },
+  { name: '医療・福祉', keywords: ['病院', '医療', '高齢者', '介護', '福祉', '健康', 'クリニック'] },
+  { name: '経済・雇用', keywords: ['仕事', '雇用', '企業', '商店街', '産業', '就職', '経済'] },
+  { name: '環境・エネルギー', keywords: ['ごみ', '環境', '自然', '公園', 'リサイクル', '再エネ', 'ゴミ'] },
+  { name: '文化・観光', keywords: ['観光', '後楽園', '文化', 'イベント', '祭り', '歴史', 'まつり'] },
+  { name: '防災・安全', keywords: ['防災', '災害', '地震', '避難', '消防', '治安', '安全'] },
   { name: 'その他', keywords: [] }
 ]
 
@@ -19,7 +19,7 @@ function classifyOpinion(title: string, content: string) {
   categories.forEach(cat => {
     scores[cat.name] = 0
     cat.keywords.forEach(keyword => {
-      if (text.includes(keyword.toLowerCase())) {
+      if (text.includes(keyword)) {
         scores[cat.name] += 1
         matchedKeywords.push(keyword)
       }
