@@ -294,10 +294,10 @@ onMounted(() => {
         <div class="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 class="text-2xl md:text-3xl font-bold text-gray-900">
-              岡山県民の声プラットフォーム
+              岡声（おかごえ）
             </h1>
             <p class="text-xs md:text-sm text-gray-600 mt-1">
-              地域課題をみんなで考える デジタル合意形成システム
+              岡山の本音が集まる掲示板
             </p>
           </div>
           <button
@@ -685,7 +685,7 @@ onMounted(() => {
     <!-- フッター -->
     <footer class="bg-gray-900 text-white mt-16 py-8">
       <div class="max-w-7xl mx-auto px-4 text-center">
-        <p class="text-sm">© 2025 岡山県デジタル合意形成プラットフォーム PoC</p>
+        <p class="text-sm">© 2025 岡声 PoC</p>
       </div>
     </footer>
   </div>
